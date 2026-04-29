@@ -317,7 +317,7 @@ by clicking the gear icon.</pre>
             const content = await file.text();
 
             try {
-                const response = await fetch('/api/optimize', {
+                const response = await fetch('/api', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content })
