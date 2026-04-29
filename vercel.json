@@ -1,7 +1,18 @@
 {
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "framework": null,
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "api/index.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/api", "dest": "/api/index.py" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ],
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/api",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
