@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOP Token Optimizer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f8f9fa;
+            color: #333;
+        }
+
+        h1 {
+            color: #1a1a2e;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .upload-area:hover {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #007bff;
+            background: #e7f1ff;
+        }
+
+        .upload-area input {
+            display: none;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1a1a2e;
+        }
+
+        .stat-card .label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .stat-card.savings .value {
+            color: #28a745;
+        }
+
+        .output-section {
+            display: none;
+            margin-top: 1.5rem;
+        }
+
+        .output-section.visible {
+            display: block;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #444;
+        }
+
+        textarea {
+            width: 100%;
+            height: 250px;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            background: white;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #1e7e34;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .loading.visible {
+            display: block;
+        }
+
+        .example {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .example h3 {
+            margin-top: 0;
+            color: #444;
+        }
+
+        .example pre {
+            background: #f4f4f4;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+        }
+
+        .copied {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #28a745;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            display: none;
+            animation: fadeIn 0.2s;
+        }
+
+        .copied.visible {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        footer {
+            margin-top: 3rem;
+            text-align: center;
+            color: #999;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>SOP Token Optimizer</h1>
+    <p class="subtitle">Upload your VTT or TXT transcript to reduce token usage by ~50% while keeping timing for chapters.</p>
+
+    <div class="upload-area" id="uploadArea">
+        <input type="file" id="fileInput" accept=".vtt,.txt">
+        <p>Drag & drop your transcript file here<br>or <strong>click to browse</strong></p>
+        <p style="color: #999; font-size: 0.85rem;">Supports .vtt and .txt files</p>
+    </div>
+
+    <div class="loading" id="loading">Processing...</div>
+
+    <div class="output-section" id="outputSection">
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="value" id="originalTokens">-</div>
+                <div class="label">Original (est. tokens)</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="optimizedTokens">-</div>
+                <div class="label">Optimized (est. tokens)</div>
+            </div>
+            <div class="stat-card savings">
+                <div class="value" id="tokensSaved">-</div>
+                <div class="label">Tokens Saved</div>
+            </div>
+        </div>
+
+        <label for="output">Optimized Transcript</label>
+        <textarea id="output" readonly></textarea>
+
+        <div class="buttons">
+            <button class="btn-primary" onclick="copyToClipboard()">Copy to Clipboard</button>
+            <button class="btn-secondary" onclick="downloadFile()">Download TXT</button>
+        </div>
+    </div>
+
+    <div class="example" id="example">
+        <h3>Example: Before & After</h3>
+        <p><strong>Before (VTT format - high tokens):</strong></p>
+        <pre>WEBVTT
+
+1
+00:00:11.539 --> 00:00:14.000
+Welcome to today's tutorial on
+setting up your dashboard.
+
+2
+00:00:14.500 --> 00:00:18.000
+First, navigate to the settings panel
+by clicking the gear icon.</pre>
+
+        <p><strong>After (Optimized - ~50% fewer tokens):</strong></p>
+        <pre>[0:11] Welcome to today's tutorial on setting up your dashboard.
+[0:14] First, navigate to the settings panel by clicking the gear icon.</pre>
+    </div>
+
+    <div class="copied" id="copied">Copied to clipboard!</div>
+
+    <footer>
+        Built for creating SOPs and video chapters with LLMs.<br>
+        Timestamps are simplified to [M:SS] or [H:MM:SS] format.
+    </footer>
+
+    <script>
+        let currentFilename = 'transcript';
+        let optimizedContent = '';
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const loading = document.getElementById('loading');
+        const outputSection = document.getElementById('outputSection');
+        const example = document.getElementById('example');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) processFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) processFile(file);
+        });
+
+        async function processFile(file) {
+            currentFilename = file.name.replace(/\.(vtt|txt)$/i, '');
+
+            loading.classList.add('visible');
+            outputSection.classList.remove('visible');
+            example.style.display = 'none';
+
+            const content = await file.text();
+
+            try {
+                const response = await fetch('/api/optimize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    loading.classList.remove('visible');
+                    return;
+                }
+
+                optimizedContent = data.optimized;
+
+                document.getElementById('originalTokens').textContent = data.stats.original_tokens.toLocaleString();
+                document.getElementById('optimizedTokens').textContent = data.stats.optimized_tokens.toLocaleString();
+                document.getElementById('tokensSaved').textContent = data.stats.percent_saved + '%';
+                document.getElementById('output').value = optimizedContent;
+
+                loading.classList.remove('visible');
+                outputSection.classList.add('visible');
+
+            } catch (err) {
+                alert('Error processing file: ' + err.message);
+                loading.classList.remove('visible');
+            }
+        }
+
+        function copyToClipboard() {
+            navigator.clipboard.writeText(optimizedContent).then(() => {
+                const copied = document.getElementById('copied');
+                copied.classList.add('visible');
+                setTimeout(() => copied.classList.remove('visible'), 2000);
+            });
+        }
+
+        function downloadFile() {
+            const blob = new Blob([optimizedContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `optimized_${currentFilename}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
