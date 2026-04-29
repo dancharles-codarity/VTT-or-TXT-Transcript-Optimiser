@@ -1,0 +1,6 @@
+[project]
+name = "sop-token-optimizer"
+version = "1.0.0"
+description = "Optimize VTT/TXT transcripts for LLM token efficiency"
+requires-python = ">=3.9"
+dependencies = []
